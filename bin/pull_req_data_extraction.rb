@@ -1516,7 +1516,7 @@ Extract data for pull requests for a given repository
       end
       repo
     rescue
-      spawn("git clone git://github.com/#{user}/#{repo}.git #{checkout_dir}")
+      spawn("git clone https://github.com/#{user}/#{repo}.git #{checkout_dir}")
       Rugged::Repository.new(checkout_dir)
     end
   end
