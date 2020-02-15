@@ -14,6 +14,8 @@ require 'mongo'
 require 'json'
 require 'sequel'
 require 'trollop'
+require 'fileutils'
+require 'open-uri'
 
 require_relative 'java'
 require_relative 'ruby'
@@ -1524,7 +1526,7 @@ Extract data for pull requests for a given repository
   # Load a commit from Github. Will return an empty hash if the commit does not exist.
   def github_commit(owner, repo, sha)
     parent_dir = File.join('commits', "#{owner}@#{repo}")
-    commit_json = File.join(parent_dir, "#{sha}.json")
+    commit_json = File.join(parent_dir, "#{sha[:sha]}.json")
     FileUtils::mkdir_p(parent_dir)
 
     r = nil
@@ -1538,7 +1540,7 @@ Extract data for pull requests for a given repository
       return r
     end
 
-    url = "https://api.github.com/repos/#{owner}/#{repo}/commits/#{sha}"
+    url = "https://api.github.com/repos/#{owner}/#{repo}/commits/#{sha[:sha]}"
     log("Requesting #{url} (#{@remaining} remaining)")
 
     contents = nil
