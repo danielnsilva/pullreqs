@@ -308,12 +308,12 @@ Extract data for pull requests for a given repository
     pr_commits = commit_entries(pr[:id], true).sort{|a,b| a['commit']['author']['date'] <=> b['commit']['author']['date']}
     # Try different 'sha' reference for non-MongoDB data
     sha = pr_commits.last[:sha].nil? ? pr_commits.last['sha'] : pr_commits.last[:sha]
-    test_diff_open = test_diff_stats(pr[:base_commit], sha)
+    #test_diff_open = test_diff_stats(pr[:base_commit], sha)
 
     pr_commits = commit_entries(pr[:id], false).sort{|a,b| a['commit']['author']['date'] <=> b['commit']['author']['date']}
     # Try different 'sha' reference for non-MongoDB data
     sha = pr_commits.last[:sha].nil? ? pr_commits.last['sha'] : pr_commits.last[:sha]
-    test_diff = test_diff_stats(pr[:base_commit], sha)
+    #test_diff = test_diff_stats(pr[:base_commit], sha)
 
     # Count number of src/comment lines
     src = src_lines(pr[:base_commit])
@@ -369,10 +369,10 @@ Extract data for pull requests for a given repository
         :other_files              => stats[:other_files],
         :src_churn_open           => stats_open[:lines_added] + stats_open[:lines_deleted],
         :test_churn_open          => stats_open[:test_lines_added] + stats_open[:test_lines_deleted],
-        :tests_added_open         => test_diff_open[:tests_added],
-        :tests_deleted_open       => test_diff_open[:tests_deleted],
-        :tests_added              => test_diff[:tests_added],
-        :tests_deleted            => test_diff[:tests_deleted],
+        #:tests_added_open         => test_diff_open[:tests_added],
+        #:tests_deleted_open       => test_diff_open[:tests_deleted],
+        #:tests_added              => test_diff[:tests_added],
+        #:tests_deleted            => test_diff[:tests_deleted],
         :src_churn                => stats[:lines_added] + stats[:lines_deleted],
         :test_churn               => stats[:test_lines_added] + stats[:test_lines_deleted],
         :new_entropy              => new_entropy(pr),
