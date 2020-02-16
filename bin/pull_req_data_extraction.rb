@@ -1145,7 +1145,7 @@ Extract data for pull requests for a given repository
     end
 
     def file_type(f)
-      lang = Linguist::Language.find_by_filename(f)
+      lang = Linguist::Language.find_by_extension(f)
       if lang.empty? then :data else lang[0].type end
     end
 
