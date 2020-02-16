@@ -178,7 +178,7 @@ Extract data for pull requests for a given repository
       when /scala/i then self.extend(ScalaData)
       when /python/i then self.extend(PythonData)
       when /go/i then self.extend(GoData)
-      else Trollop::die "Language #{lang} not supported"
+      else Trollop::die "Language #{language} not supported"
     end
 
     # Update the repo
