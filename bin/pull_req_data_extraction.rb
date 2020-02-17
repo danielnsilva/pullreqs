@@ -305,14 +305,14 @@ Extract data for pull requests for a given repository
     stats_open = pr_stats(pr, true)
 
     # Test diff stats
-    pr_commits = commit_entries(pr[:id], true).sort{|a,b| a['commit']['author']['date'] <=> b['commit']['author']['date']}
+    #pr_commits = commit_entries(pr[:id], true).sort{|a,b| a['commit']['author']['date'] <=> b['commit']['author']['date']}
     # Try different 'sha' reference for non-MongoDB data
-    sha = pr_commits.last[:sha].nil? ? pr_commits.last['sha'] : pr_commits.last[:sha]
+    #sha = pr_commits.last[:sha].nil? ? pr_commits.last['sha'] : pr_commits.last[:sha]
     #test_diff_open = test_diff_stats(pr[:base_commit], sha)
 
-    pr_commits = commit_entries(pr[:id], false).sort{|a,b| a['commit']['author']['date'] <=> b['commit']['author']['date']}
+    #pr_commits = commit_entries(pr[:id], false).sort{|a,b| a['commit']['author']['date'] <=> b['commit']['author']['date']}
     # Try different 'sha' reference for non-MongoDB data
-    sha = pr_commits.last[:sha].nil? ? pr_commits.last['sha'] : pr_commits.last[:sha]
+    #sha = pr_commits.last[:sha].nil? ? pr_commits.last['sha'] : pr_commits.last[:sha]
     #test_diff = test_diff_stats(pr[:base_commit], sha)
 
     # Count number of src/comment lines
