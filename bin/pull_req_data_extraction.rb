@@ -239,8 +239,8 @@ Extract data for pull requests for a given repository
     # Process pull request list
     do_pr = Proc.new do |pr|
       begin
+        log "Processing PR ##{pr[:github_id]}"
         r = process_pull_request(pr, language)
-        log r
         r
       rescue StandardError => e
         log "Error processing pull_request #{pr[:github_id]}: #{e.message}"
