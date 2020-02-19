@@ -326,6 +326,9 @@ Extract data for pull requests for a given repository
 
     prev_pull_reqs = prev_pull_requests(pr,'opened')
 
+    requester = requester(pr)
+    closer = closer(pr)
+
     # Create line for a pull request
     {
         # General stuff
@@ -403,8 +406,18 @@ Extract data for pull requests for a given repository
         :ci                       => ci(pr),
 
         # Contributor characteristics
-        :requester                => requester(pr),
-        :closer                   => closer(pr),
+        :requester                => requester[:login],
+        :requester_long           => requester[:long],
+        :requester_lat            => requester[:lat],
+        :requester_country        => requester[:country_code],
+        :requester_state          => requester[:state],
+        :requester_city           => requester[:city],
+        :closer                   => closer[:login],
+        :closer_long              => closer[:long],
+        :closer_lat               => closer[:lat],
+        :closer_country           => closer[:country_code],
+        :closer_state             => closer[:state],
+        :closer_city              => closer[:city],
         :merger                   => merger(pr),
         :prev_pullreqs            => prev_pull_reqs,
         :requester_succ_rate      => if prev_pull_reqs > 0 then prev_pull_requests(pr, 'merged').to_f / prev_pull_reqs.to_f else 0 end,
@@ -686,7 +699,8 @@ Extract data for pull requests for a given repository
   # Person that first closed the pull request
   def closer(pr)
     q = <<-QUERY
-    select u.login as login
+    select u.login as 'login', u.long as 'long', u.lat as 'lat',
+      u.country_code as 'country_code', u.state as 'state', u.city as 'city'
     from pull_request_history prh, users u
     where prh.pull_request_id = ?
       and prh.actor_id = u.id
@@ -696,7 +710,8 @@ Extract data for pull requests for a given repository
 
     if closer.nil?
       q = <<-QUERY
-      select u.login as login
+      select u.login as 'login', u.long as 'long', u.lat as 'lat',
+        u.country_code as 'country_code', u.state as 'state', u.city as 'city'
       from issues i, issue_events ie, users u
       where i.pull_request_id = ?
         and ie.issue_id = i.id
@@ -707,7 +722,7 @@ Extract data for pull requests for a given repository
     end
 
     unless closer.nil?
-      closer[:login]
+      closer
     else
       nil
     end
@@ -729,7 +744,7 @@ Extract data for pull requests for a given repository
       # If the PR was merged, then it is safe to assume that the
       # closer is also the merger
       if not close_reason[pr[:github_id]].nil? and close_reason[pr[:github_id]] != :unknown
-        closer(pr)
+        closer(pr)[:login]
       else
         nil
       end
@@ -741,13 +756,14 @@ Extract data for pull requests for a given repository
   # Number of followers of the person that created the pull request
   def requester(pr)
     q = <<-QUERY
-    select u.login as login
+    select u.login as 'login', u.long as 'long', u.lat as 'lat',
+      u.country_code as 'country_code', u.state as 'state', u.city as 'city'
     from users u, pull_request_history prh
     where prh.actor_id = u.id
       and action = 'opened'
       and prh.pull_request_id = ?
     QUERY
-    db.fetch(q, pr[:id]).first[:login]
+    db.fetch(q, pr[:id]).first
   end
 
   # Number of previous pull requests for the pull requester
