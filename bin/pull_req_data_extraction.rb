@@ -432,7 +432,8 @@ Extract data for pull requests for a given repository
         :prior_interaction_pr_comments     => prior_interaction_pr_comments(pr, months_back),
         :prior_interaction_commits         => prior_interaction_commits(pr, months_back),
         :prior_interaction_commit_comments => prior_interaction_commit_comments(pr, months_back),
-        :first_response                    => first_response(pr)
+        :first_response                    => first_response(pr),
+        :avg_response                      => avg_response(pr)
     }
   end
 
@@ -1012,7 +1013,7 @@ Extract data for pull requests for a given repository
         from pull_request_comments prc, users u
         where prc.pull_request_id = ?
           and u.id = prc.user_id
-          and u.login not in ('travis-ci', 'cloudbees')
+          and u.type = 'USR'
           and prc.created_at < (
             select max(created_at)
             from pull_request_history
@@ -1023,19 +1024,74 @@ Extract data for pull requests for a given repository
         where i.pull_request_id = ?
           and i.id = ic.issue_id
           and u.id = ic.user_id
-          and u.login not in ('travis-ci', 'cloudbees')
+          and u.type = 'USR'
           and ic.created_at < (
+            select max(created_at)
+            from pull_request_history
+            where action = 'closed' and pull_request_id = ?)
+        union
+        select min(cc.created_at) as created
+        from pull_request_commits prc, commit_comments cc, users u
+        where prc.pull_request_id = ?
+          and prc.commit_id = cc.commit_id
+          and u.id = cc.user_id
+          and u.type = 'USR'
+          and cc.created_at < (
             select max(created_at)
             from pull_request_history
             where action = 'closed' and pull_request_id = ?)
       ) as a;
     QUERY
-    resp = db.fetch(q, pr[:id], pr[:id], pr[:id], pr[:id]).first[:first_resp]
+    resp = db.fetch(q, pr[:id], pr[:id], pr[:id], pr[:id], pr[:id], pr[:id]).first[:first_resp]
     unless resp.nil?
       (resp - pr[:created_at]).to_i / 60
     else
       -1
     end
+  end
+
+  # Average time interval between comments (in minutes)
+  def avg_response(pr)
+    q = <<-QUERY
+      select case
+      when count(*) < 2 then 0
+      else timestampdiff(minute, min(created), max(created)) / (count(*) -1)
+      end as avg_response from ( 
+        select prc.created_at as created
+        from pull_request_comments prc, users u
+        where prc.pull_request_id = ?
+          and u.id = prc.user_id
+          and u.type = 'USR'
+          and prc.created_at < (
+            select max(created_at)
+            from pull_request_history
+            where action = 'closed' and pull_request_id = ?)
+        union
+        select ic.created_at as created
+        from issues i, issue_comments ic, users u
+        where i.pull_request_id = ?
+          and i.id = ic.issue_id
+          and u.id = ic.user_id
+          and u.type = 'USR'
+          and ic.created_at < (
+            select max(created_at)
+            from pull_request_history
+            where action = 'closed' and pull_request_id = ?)
+        union
+        select cc.created_at as created
+        from pull_request_commits prc, commit_comments cc, users u
+        where prc.pull_request_id = ?
+          and prc.commit_id = cc.commit_id
+          and u.id = cc.user_id
+          and u.type = 'USR'
+          and cc.created_at < (
+            select max(created_at)
+            from pull_request_history
+            where action = 'closed' and pull_request_id = ?)
+      ) as a;
+    QUERY
+    resp = db.fetch(q, pr[:id], pr[:id], pr[:id], pr[:id], pr[:id], pr[:id]).first[:avg_response]
+    resp.to_i
   end
 
   # Number of commits to the hottest file between the time the PR was created
