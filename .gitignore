@@ -31,4 +31,7 @@ doc/build
 cache
 data/*.err
 data/*.csv
+commits/*
+repos/*
+.vscode/*
 
