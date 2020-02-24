@@ -325,6 +325,7 @@ Extract data for pull requests for a given repository
     commits_incl_prs = 1 if commits_incl_prs == 0 # To avoid divsions by zero below
 
     prev_pull_reqs = prev_pull_requests(pr,'opened')
+    prev_pull_reqs_merged = prev_pull_requests(pr,'merged')
 
     requester = requester(pr)
     closer = closer(pr)
@@ -420,10 +421,13 @@ Extract data for pull requests for a given repository
         :closer_city              => closer[:city],
         :merger                   => merger(pr),
         :prev_pullreqs            => prev_pull_reqs,
-        :requester_succ_rate      => if prev_pull_reqs > 0 then prev_pull_requests(pr, 'merged').to_f / prev_pull_reqs.to_f else 0 end,
+        :prev_pullreqs_merged     => prev_pull_reqs_merged,
+        :requester_succ_rate      => if prev_pull_reqs > 0 then prev_pull_reqs_merged.to_f / prev_pull_reqs.to_f else 0 end,
+        :first_pull               => prev_pull_reqs == 0,
         :followers                => followers(pr),
         :main_team_member         => main_team_member?(pr, months_back),
-        :social_connection        => social_connection?(pr),
+        :requester_follows_closer => social_connection?(pr),
+        :closer_follows_requester => social_connection?(pr, true),
 
         # Project/contributor interaction characteristics
         :prior_interaction_issue_events    => prior_interaction_issue_events(pr, months_back),
@@ -807,7 +811,11 @@ Extract data for pull requests for a given repository
   # Defined in: Tsay, Jason, Laura Dabbish, and James Herbsleb.
   # "Influence of social and technical factors for evaluating contribution in GitHub."
   # Proceedings of the ICSE 2014
-  def social_connection?(pr)
+  # Requester follows closer (Tsay): inverted = false or nil
+  # Closer follows requester: inverted = true
+  def social_connection?(pr, inverted = false)
+    user_action = if inverted then 'opened' else 'closed' end
+    follower_action = if inverted then 'closed' else 'opened' end
     q = <<-QUERY
     select *
     from followers
@@ -815,13 +823,13 @@ Extract data for pull requests for a given repository
       select min(prh.actor_id)
       from pull_request_history prh
       where prh.pull_request_id = ?
-        and prh.action = 'closed'
+        and prh.action = ?
         )
     and follower_id = (
       select min(prh.actor_id)
       from pull_request_history prh
       where prh.pull_request_id = ?
-        and prh.action = 'opened'
+        and prh.action = ?
         )
     and created_at < (
       select min(created_at)
@@ -830,7 +838,7 @@ Extract data for pull requests for a given repository
         and action = 'opened'
     )
     QUERY
-    db.fetch(q, pr[:id], pr[:id], pr[:id]).all.size > 0
+    db.fetch(q, pr[:id], user_action, pr[:id], follower_action, pr[:id]).all.size > 0
   end
 
   # People that merged (not necessarily through pull requests) up to months_back
