@@ -320,6 +320,8 @@ Extract data for pull requests for a given repository
 
     if src == 0 then raise StandardError.new("Bad src lines: 0, pr: #{pr[:github_id]}, id: #{pr[:id]}") end
 
+    merged_at = merge_ts(pr)
+    
     months_back = 3
     commits_incl_prs = commits_last_x_months(pr, false, months_back)
     commits_incl_prs = 1 if commits_incl_prs == 0 # To avoid divsions by zero below
@@ -339,8 +341,9 @@ Extract data for pull requests for a given repository
         :github_id                => pr[:github_id],
 
         # PR characteristics
+        :merged                   => (not merged_at.nil?),
         :created_at               => Time.at(pr[:created_at]).to_i,
-        :merged_at                => merge_ts(pr),
+        :merged_at                => merged_at,
         :closed_at                => Time.at(pr[:closed_at]).to_i,
         :lifetime_minutes         => pr[:lifetime_minutes],
         :mergetime_minutes        => merge_time_minutes(pr),
