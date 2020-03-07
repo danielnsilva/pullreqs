@@ -326,6 +326,10 @@ Extract data for pull requests for a given repository
     commits_incl_prs = commits_last_x_months(pr, false, months_back)
     commits_incl_prs = 1 if commits_incl_prs == 0 # To avoid divsions by zero below
 
+    num_pr_comments = num_pr_comments(pr)
+    num_issue_comments = num_issue_comments(pr)
+    num_commit_comments = num_commit_comments(pr)
+
     prev_pull_reqs = prev_pull_requests(pr,'opened')
     prev_pull_reqs_merged = prev_pull_requests(pr,'merged')
 
@@ -356,10 +360,10 @@ Extract data for pull requests for a given repository
         #:description_length       => description_length(pr),
         :num_commits              => num_commits(pr),
         :num_commits_open         => num_commits_at_open(pr),
-        :num_pr_comments          => num_pr_comments(pr),
-        :num_issue_comments       => num_issue_comments(pr),
-        :num_commit_comments      => num_commit_comments(pr),
-        :num_comments             => num_pr_comments(pr) + num_issue_comments(pr) + num_commit_comments(pr),
+        :num_pr_comments          => num_pr_comments,
+        :num_issue_comments       => num_issue_comments,
+        :num_commit_comments      => num_commit_comments,
+        :num_comments             => num_pr_comments + num_issue_comments + num_commit_comments,
         :num_commit_comments_open => num_commit_comments(pr, true),
         :num_participants         => num_participants(pr),
         :files_added_open         => stats_open[:files_added],
