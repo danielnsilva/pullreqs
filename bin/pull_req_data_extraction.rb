@@ -332,6 +332,8 @@ Extract data for pull requests for a given repository
     requester = requester(pr)
     closer = closer(pr)
 
+    user_exclude_list = ['coveralls']
+
     # Create line for a pull request
     {
         # General stuff
@@ -439,8 +441,8 @@ Extract data for pull requests for a given repository
         :prior_interaction_pr_comments     => prior_interaction_pr_comments(pr, months_back),
         :prior_interaction_commits         => prior_interaction_commits(pr, months_back),
         :prior_interaction_commit_comments => prior_interaction_commit_comments(pr, months_back),
-        :first_response                    => first_response(pr),
-        :avg_response                      => avg_response(pr)
+        :first_response                    => first_response(pr, user_exclude_list),
+        :avg_response                      => avg_response(pr, user_exclude_list)
     }
   end
 
@@ -1017,7 +1019,7 @@ Extract data for pull requests for a given repository
 
   # Time interval in minutes from pull request creation to first response
   # by reviewers
-  def first_response(pr)
+  def first_response(pr, user_exclude_list)
     q = <<-QUERY
       select min(created) as first_resp from (
         select min(prc.created_at) as created
@@ -1025,6 +1027,7 @@ Extract data for pull requests for a given repository
         where prc.pull_request_id = ?
           and u.id = prc.user_id
           and u.type = 'USR'
+          and u.login not in ?
           and prc.created_at < (
             select max(created_at)
             from pull_request_history
@@ -1036,6 +1039,7 @@ Extract data for pull requests for a given repository
           and i.id = ic.issue_id
           and u.id = ic.user_id
           and u.type = 'USR'
+          and u.login not in ?
           and ic.created_at < (
             select max(created_at)
             from pull_request_history
@@ -1047,13 +1051,14 @@ Extract data for pull requests for a given repository
           and prc.commit_id = cc.commit_id
           and u.id = cc.user_id
           and u.type = 'USR'
+          and u.login not in ?
           and cc.created_at < (
             select max(created_at)
             from pull_request_history
             where action = 'closed' and pull_request_id = ?)
       ) as a;
     QUERY
-    resp = db.fetch(q, pr[:id], pr[:id], pr[:id], pr[:id], pr[:id], pr[:id]).first[:first_resp]
+    resp = db.fetch(q, pr[:id], user_exclude_list, pr[:id], pr[:id], user_exclude_list, pr[:id], pr[:id], user_exclude_list, pr[:id]).first[:first_resp]
     unless resp.nil?
       (resp - pr[:created_at]).to_i / 60
     else
@@ -1062,7 +1067,7 @@ Extract data for pull requests for a given repository
   end
 
   # Average time interval between comments (in minutes)
-  def avg_response(pr)
+  def avg_response(pr, user_exclude_list)
     q = <<-QUERY
       select case
       when count(*) < 2 then 0
@@ -1073,6 +1078,7 @@ Extract data for pull requests for a given repository
         where prc.pull_request_id = ?
           and u.id = prc.user_id
           and u.type = 'USR'
+          and u.login not in ?
           and prc.created_at < (
             select max(created_at)
             from pull_request_history
@@ -1084,6 +1090,7 @@ Extract data for pull requests for a given repository
           and i.id = ic.issue_id
           and u.id = ic.user_id
           and u.type = 'USR'
+          and u.login not in ?
           and ic.created_at < (
             select max(created_at)
             from pull_request_history
@@ -1095,13 +1102,14 @@ Extract data for pull requests for a given repository
           and prc.commit_id = cc.commit_id
           and u.id = cc.user_id
           and u.type = 'USR'
+          and u.login not in ?
           and cc.created_at < (
             select max(created_at)
             from pull_request_history
             where action = 'closed' and pull_request_id = ?)
       ) as a;
     QUERY
-    resp = db.fetch(q, pr[:id], pr[:id], pr[:id], pr[:id], pr[:id], pr[:id]).first[:avg_response]
+    resp = db.fetch(q, pr[:id], user_exclude_list, pr[:id], pr[:id], user_exclude_list, pr[:id], pr[:id], user_exclude_list, pr[:id]).first[:avg_response]
     resp.to_i
   end
 
