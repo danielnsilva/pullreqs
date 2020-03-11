@@ -1129,41 +1129,52 @@ Extract data for pull requests for a given repository
   end
 
   CIBADGES = {
-      /https:\/\/.*.cloudbees.com\/buildStatus\/icon/    => :cloudbees,
-      /https:\/\/circleci.com\/gh\/.*\.(png|svg)/        => :circleci,
-      /https:\/\/travis-ci.org\/.*\.(svg|png)/           => :travis,
-      /https:\/\/app.wercker.com\/status\/.*\/m/         => :wrecker,
-      /https:\/\/api.shippable.com\/projects\/.*\/badge/ => :shippable,
-      /https:\/\/codeship.com\/projects\/.*\/status/     => :codeship,
-      /https:\/\/semaphoreapp.com\/vast/                 => :semaphoreapp,
-      /https:\/\/snap-ci.com\/.*\/branch/                => :snapci
+      /https:\/\/.*.cloudbees.com\/buildStatus\/icon/     => :cloudbees,
+      /https:\/\/circleci.com\/gh\/.*\.(png|svg)/         => :circleci,
+      /https:\/\/travis-ci.org\/.*\.(svg|png)/            => :travis,
+      /https:\/\/app.wercker.com\/status\/.*\/m/          => :wercker,
+      /https:\/\/api.shippable.com\/projects\/.*\/badge/  => :shippable,
+      /https:\/\/codeship.com\/projects\/.*\/status/      => :codeship,
+      /https:\/\/semaphoreapp.com\/vast/                  => :semaphoreapp,
+      /https:\/\/.*.semaphoreci.com\/badges\/.*\.svg/     => :semaphoreci,
+      /https:\/\/snap-ci.com\/.*\/branch/                 => :snapci,
+      /https:\/\/app.buddy.works\/.*\/badge.svg/          => :buddy,
+      /https:\/\/ci.appveyor.com\/api\/projects\/status/  => :appveyor,
+      /https:\/\/dev.azure.com\/.*\/_apis\/build\/status/ => :azure
   }
 
   CICONFIGS = {
-      /.travis.y[a]?ml/   => :travis,
-      /circle.y[a]?ml/    => :circleci,
-      /shippable.y[a]?ml/ => :shippable,
-      /wercker.y[a]?ml/   => :wercker
+      /.travis.y[a]?ml/               => :travis,
+      /circle.y[a]?ml/                => :circleci,
+      /shippable.y[a]?ml/             => :shippable,
+      /wercker.y[a]?ml/               => :wercker,
+      /.semaphore\/semaphore.y[a]?ml/ => :semaphoreci,
+      /buddy.y[a]?ml/                 => :buddy,
+      /appveyor.y[a]?ml/              => :appveyor,
+      /azure-pipelines.y[a]?ml/       => :azure
   }
 
   def ci(pr)
     # Check whether a CI configuration file exists in the root directory
-    root_files = files_at_commit(pr[:base_commit], lambda{|f| f[:path].count('/') == 1})
-    root_files.each do |f|
+    files = files_at_commit(pr[:base_commit], lambda{|f| f[:path].count('/') <= 2})
+    files.each do |f|
       CICONFIGS.keys.each do |ci|
         return CICONFIGS[ci] unless f[:path].match(ci).nil?
       end
     end
 
     # Check whether a README file contains a CI badge
-    readmes = root_files.find{|f| f[:path].match(/\/README/)}
+    readmes = files.find{|f| f[:path].match(/\/README/)}
+    readmes = [readmes] if readmes.is_a?(Hash)
     return :unknown if readmes.nil? or readmes.empty?
-    return :unknown if readmes[0].nil?
 
-    readme = git.read(readmes[0][:oid]).data
-    CIBADGES.keys.each do |badge|
-      if readme.match(badge)
-        return CIBADGES[badge]
+    readmes.each do |readme|
+      return :unknown if readme.nil?
+      content = git.read(readme[:oid]).data
+      CIBADGES.keys.each do |badge|
+        if content.match(badge)
+          return CIBADGES[badge]
+        end
       end
     end
 
