@@ -236,6 +236,8 @@ Extract data for pull requests for a given repository
     end
     log "Close reasons: #{close_reason.group_by { |_, v| v }.reduce({}) { |acc, x| acc.merge({x[0] => x[1].size}) }}"
 
+    log "#{prs.size} PRs to process"
+
     # Process pull request list
     do_pr = Proc.new do |pr|
       begin
@@ -738,7 +740,7 @@ Extract data for pull requests for a given repository
     unless closer.nil?
       closer
     else
-      nil
+      {:login=>nil, :long=>nil, :lat=>nil, :country_code=>nil, :state=>nil, :city=>nil}
     end
   end
 
