@@ -1553,7 +1553,7 @@ Extract data for pull requests for a given repository
         a = github_commit(owner, repo, x)
       end
 
-      acc << a unless a.nil?
+      acc << a unless a.empty?
       acc
     }.select{|c| c['parents'].size <= 1}
   end
