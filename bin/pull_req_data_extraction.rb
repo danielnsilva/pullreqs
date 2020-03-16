@@ -338,7 +338,7 @@ Extract data for pull requests for a given repository
     requester = requester(pr)
     closer = closer(pr)
 
-    user_exclude_list = ['coveralls']
+    user_exclude_list = ['coveralls','lxc-jenkins','typesafe-tools','googlebot']
 
     # Create line for a pull request
     {
